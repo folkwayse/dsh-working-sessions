@@ -19,12 +19,12 @@ click one to jump straight into its conversation.
 
 ```
 ● Working
-  ◌  Design | UI mobile bergaya gab…   ← spinner = actively running
-  ◌  Fix | curl m4s Akamai masih forb…
+  ◌  Refactor auth middleware          ← spinner = actively running
+  ◌  Fix flaky e2e test
 ─────────────────────────────────
 Workspaces
-  📁 RUANG_KUOTA
-  📁 min6_sukoharjo
+  📁 project-a
+  📁 project-b
   ...
 ```
 
