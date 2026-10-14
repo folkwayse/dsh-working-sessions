@@ -44,45 +44,22 @@ window.__ModuleLoader__.load({
 
     function pickWorking(list, statuses) {
       const working = [];
-      try {
-        if (!list || !Array.isArray(list.ids)) return working;
-        const projections = list.projectionsBySession || {};
-        for (const id of list.ids) {
-          const s = list.byId && list.byId[id];
-          if (!s || s.archived) continue;
-          const st = statuses && statuses.get ? statuses.get(id) : undefined;
-          // Status live (sessionStatus service) adalah kebenaran utama —
-          // s.running dari summary sering stale (sesi berhenti tetap true).
-          const running = st ? st.running === true : Boolean(s.running);
-          // Subagent aktif = child yang STATUS-NYA running (bukan sekadar
-          // panjang katalog — katalog memuat subagent yang sudah selesai).
-          // Sama dengan runningChildCount ui-workspace client.js:450.
-          const catalog = projections[id]?.values?.subagentCatalog;
-          const subagents = catalog
-            ? catalog.reduce((count, child) =>
-                count + ((statuses.get(child.id)?.running ?? list.byId[child.id]?.running) === true ? 1 : 0), 0)
-            : 0;
-          // Guard zombie hanya untuk running: host kadang menandai sesi lama
-          // "running" (mentok/crash tanpa stop signal). Sesi aktif beneran
-          // streaming punya updatedAt segar (event terakhir < 10 menit).
-          const fresh = (Date.now() - (Number(s.updatedAt) || 0)) < 10 * 60 * 1000;
-          const active = (running || subagents > 0) && fresh;
-          if (active) {
-            working.push({ id, title: s.title, displayTitle: s.displayTitle, running: true, completed: false });
-            continue;
-          }
-          // Selesai-belum-dibuka (dot hijau): tampil sebagai ✓ sampai sesinya
-          // dibuka. Sesi yang status live-nya MASIH running / punya subagent
-          // tidak pernah masuk sini — spinner sidebar masih muter berarti
-          // dia bukan "selesai", walau completionUnread sempat ke-set.
-          const completed = (st && st.completionUnread) === true && !running && subagents === 0;
-          if (!completed) continue;
-          working.push({ id, title: s.title, displayTitle: s.displayTitle, running: false, completed: true });
+      if (!list || !Array.isArray(list.ids)) return working;
+      for (const id of list.ids) {
+        const s = list.byId && list.byId[id];
+        if (!s || s.archived) continue;
+        const st = statuses && statuses.get ? statuses.get(id) : undefined;
+        // Kriteria SATU dan sama dengan spinner sidebar (sessionNode,
+        // ui-workspace client.js:466): running = status?.running ?? s.running.
+        // Sesi yang spinner-nya muter di sidebar = naik. Titik.
+        const running = (st ? st.running : undefined) ?? Boolean(s.running);
+        // Selesai-belum-dibuka (dot hijau): ✓ sampai sesinya dibuka.
+        const completed = (st ? st.completionUnread : undefined) === true && !running;
+        if (running || completed) {
+          working.push({ id, title: s.title, displayTitle: s.displayTitle, running, completed });
         }
-        working.sort((a, b) => (b.running - a.running));
-      } catch (e) {
-        console.warn('[working-sessions] pickWorking error', e);
       }
+      working.sort((a, b) => (b.running - a.running));
       return working;
     }
 
