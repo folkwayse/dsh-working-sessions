@@ -1,6 +1,6 @@
 {
   "name": "dsh-working-sessions",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Sidebar 'Working' group: sessions that are running or finished-but-unopened (green dot) float to the top.",
   "type": "module",
   "exports": {
