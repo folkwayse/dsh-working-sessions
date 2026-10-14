@@ -54,8 +54,13 @@ window.__ModuleLoader__.load({
           // Status live (sessionStatus service) adalah kebenaran utama —
           // s.running dari summary sering stale (sesi berhenti tetap true).
           const running = st ? st.running === true : Boolean(s.running);
-          const subagents = st
-            ? (projections[id]?.values?.subagentCatalog?.length ?? 0)
+          // Subagent aktif = child yang STATUS-NYA running (bukan sekadar
+          // panjang katalog — katalog memuat subagent yang sudah selesai).
+          // Sama dengan runningChildCount ui-workspace client.js:450.
+          const catalog = projections[id]?.values?.subagentCatalog;
+          const subagents = catalog
+            ? catalog.reduce((count, child) =>
+                count + ((statuses.get(child.id)?.running ?? list.byId[child.id]?.running) === true ? 1 : 0), 0)
             : 0;
           // Guard zombie hanya untuk running: host kadang menandai sesi lama
           // "running" (mentok/crash tanpa stop signal). Sesi aktif beneran
