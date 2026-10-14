@@ -57,22 +57,24 @@ window.__ModuleLoader__.load({
           const subagents = st
             ? (projections[id]?.values?.subagentCatalog?.length ?? 0)
             : 0;
-          // Guard zombie: host kadang masih menandai sesi lama "running"
-          // (mentok/crash tanpa stop signal). Sesi aktif beneranStreaming
-          // punya updatedAt segar (event terakhir < 10 menit).
+          // Selesai-belum-dibuka (dot hijau): tetap tampil sampai sesinya
+          // dibuka — membuka sesi otomatis menghapus completionUnread.
+          const completed = (st && st.completionUnread) === true;
+          // Guard zombie hanya untuk running: host kadang menandai sesi lama
+          // "running" (mentok/crash tanpa stop signal). Sesi aktif beneran
+          // streaming punya updatedAt segar (event terakhir < 10 menit).
           const fresh = (Date.now() - (Number(s.updatedAt) || 0)) < 10 * 60 * 1000;
-          if ((running || subagents > 0) && fresh) {
-            working.push({
-              id,
-              title: s.title,
-              displayTitle: s.displayTitle,
-              running: true,
-              completed: false
-            });
-          }
+          const active = (running || subagents > 0) && fresh;
+          if (!active && !completed) continue;
+          working.push({
+            id,
+            title: s.title,
+            displayTitle: s.displayTitle,
+            running: active,
+            completed
+          });
         }
-        working.sort((a, b) => (b.running - a.running));
-      } catch (e) {
+        working.sort((a, b) => (b.running - a.running));      } catch (e) {
         console.warn('[working-sessions] pickWorking error', e);
       }
       return working;
@@ -143,14 +145,22 @@ window.__ModuleLoader__.load({
               onMouseEnter: (e) => { e.currentTarget.style.background = 'var(--dsh-surface-hover, rgba(255,255,255,0.06))'; },
               onMouseLeave: (e) => { e.currentTarget.style.background = 'transparent'; }
             },
-              h('span', {
-                style: {
-                  width: 14, height: 14, borderRadius: '50%', flexShrink: 0,
-                  border: '2px solid rgba(63,178,127,0.25)',
-                  borderTopColor: '#3fb27f',
-                  animation: 'dsh-working-spin 1s linear infinite'
-                }
-              }),
+              s.running
+                ? h('span', {
+                    style: {
+                      width: 14, height: 14, borderRadius: '50%', flexShrink: 0,
+                      border: '2px solid rgba(63,178,127,0.25)',
+                      borderTopColor: '#3fb27f',
+                      animation: 'dsh-working-spin 1s linear infinite'
+                    }
+                  })
+                : h('span', {
+                    style: {
+                      width: 14, height: 14, flexShrink: 0,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      color: '#3fb27f', fontSize: 12, fontWeight: 700
+                    }
+                  }, '✓'),
               h('span', {
                 style: { overflow: 'hidden', textOverflow: 'ellipsis' }
               }, s.displayTitle || s.title || s.id)
