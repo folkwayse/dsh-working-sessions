@@ -57,24 +57,25 @@ window.__ModuleLoader__.load({
           const subagents = st
             ? (projections[id]?.values?.subagentCatalog?.length ?? 0)
             : 0;
-          // Selesai-belum-dibuka (dot hijau): tetap tampil sampai sesinya
-          // dibuka — membuka sesi otomatis menghapus completionUnread.
-          const completed = (st && st.completionUnread) === true;
           // Guard zombie hanya untuk running: host kadang menandai sesi lama
           // "running" (mentok/crash tanpa stop signal). Sesi aktif beneran
           // streaming punya updatedAt segar (event terakhir < 10 menit).
           const fresh = (Date.now() - (Number(s.updatedAt) || 0)) < 10 * 60 * 1000;
           const active = (running || subagents > 0) && fresh;
-          if (!active && !completed) continue;
-          working.push({
-            id,
-            title: s.title,
-            displayTitle: s.displayTitle,
-            running: active,
-            completed
-          });
+          if (active) {
+            working.push({ id, title: s.title, displayTitle: s.displayTitle, running: true, completed: false });
+            continue;
+          }
+          // Selesai-belum-dibuka (dot hijau): tampil sebagai ✓ sampai sesinya
+          // dibuka. Sesi yang status live-nya MASIH running / punya subagent
+          // tidak pernah masuk sini — spinner sidebar masih muter berarti
+          // dia bukan "selesai", walau completionUnread sempat ke-set.
+          const completed = (st && st.completionUnread) === true && !running && subagents === 0;
+          if (!completed) continue;
+          working.push({ id, title: s.title, displayTitle: s.displayTitle, running: false, completed: true });
         }
-        working.sort((a, b) => (b.running - a.running));      } catch (e) {
+        working.sort((a, b) => (b.running - a.running));
+      } catch (e) {
         console.warn('[working-sessions] pickWorking error', e);
       }
       return working;
