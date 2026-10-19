@@ -1,12 +1,21 @@
 {
   "name": "dsh-working-sessions",
-  "version": "0.2.3",
+  "version": "0.2.5",
   "description": "Sidebar 'Working' group: sessions that are running or finished-but-unopened (green dot) float to the top.",
   "type": "module",
+  "main": "./lib/index.js",
   "exports": {
-    ".": "./index.js",
-    "./client": "./client.js"
+    ".": "./lib/index.js",
+    "./client": "./lib/client.js"
   },
+  "files": [
+    "lib",
+    "index.js",
+    "client.js",
+    "cordis.patch.yml",
+    "README.md",
+    "LICENSE"
+  ],
   "dsh": {
     "bundle": {
       "patch": "./cordis.patch.yml"
@@ -14,7 +23,9 @@
     "client": {
       "platform": "web",
       "immediately": true,
-      "inject": ["@deepseek-ai/dsh-client-ui-slots"]
+      "inject": [
+        "@deepseek-ai/dsh-client-ui-slots"
+      ]
     }
   }
 }
